@@ -49,13 +49,13 @@ export class McpCommand implements CliCommand {
     });
 
     try {
-      this.io.line("Starting Telegram MCP server...");
-      await session.start();
       const server = TelegramMcpServer.create(session, options.channel);
       await server.start(new StdioServerTransport());
       if (options.channel) {
         await server.subscribe();
       }
+      this.io.line("Starting Telegram MCP server...");
+      await session.start();
       keep = true;
     } finally {
       unregister();

@@ -20,11 +20,13 @@ export class TelegramChannel {
   ) {}
 
   async start(): Promise<void> {
-    this.self = await this.session.getMe();
-
     this.unsubscribe = this.session.on("message", (message) => {
       void this.publish(message);
     });
+
+    if (this.session.client) {
+      this.self = await this.session.getMe();
+    }
 
     const onclose = this.mcp.onclose;
     this.mcp.onclose = () => {
@@ -40,6 +42,7 @@ export class TelegramChannel {
 
   private async publish(message: Message): Promise<void> {
     try {
+      this.self ??= await this.session.getMe();
       const event: MessageChannelEvent = {
         source: "telegram",
         self: this.self!,
