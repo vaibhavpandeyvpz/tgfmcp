@@ -1,0 +1,49 @@
+{
+  "name": "tgmcp",
+  "version": "0.1.0",
+  "description": "TypeScript stdio MCP server and CLI for Telegram bots.",
+  "type": "module",
+  "bin": {
+    "tgmcp": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/copy-instructions.mjs",
+    "clean": "rm -rf dist",
+    "dev": "tsx src/index.ts",
+    "prepack": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "telegram",
+    "telegraf",
+    "bot",
+    "cli",
+    "typescript"
+  ],
+  "author": "Vaibhav Pandey <contact@vaibhavpandey.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "commander": "^14.0.3",
+    "telegraf": "^4.16.3",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}
