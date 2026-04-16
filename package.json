@@ -29,6 +29,14 @@
   ],
   "author": "Vaibhav Pandey <contact@vaibhavpandey.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vaibhavpandeyvpz/tgfmcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vaibhavpandeyvpz/tgfmcp/issues"
+  },
+  "homepage": "https://github.com/vaibhavpandeyvpz/tgfmcp#readme",
   "publishConfig": {
     "access": "public"
   },
