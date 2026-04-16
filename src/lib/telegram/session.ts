@@ -38,10 +38,7 @@ export class TelegramSession {
   private readonly readyDeferred = createDeferred<Connection>();
   private readonly authFailureDeferred = createDeferred<string>();
 
-  constructor(options: {
-    token: string;
-    io?: CliIO;
-  }) {
+  constructor(options: { token: string; io?: CliIO }) {
     this.token = options.token;
     this.io = options.io ?? new CliIO();
   }
@@ -155,9 +152,13 @@ export class TelegramSession {
     return admins.map((member) => {
       const user = "user" in member ? member.user : undefined;
       return {
-        ...this.toEntity(user ?? { id: 0, first_name: "Unknown" }, user?.is_bot ? "bot" : "user"),
+        ...this.toEntity(
+          user ?? { id: 0, first_name: "Unknown" },
+          user?.is_bot ? "bot" : "user",
+        ),
         flags: {
-          admin: member.status === "administrator" || member.status === "creator",
+          admin:
+            member.status === "administrator" || member.status === "creator",
           owner: member.status === "creator",
           anonymous: Boolean("is_anonymous" in member && member.is_anonymous),
           bot: Boolean(user?.is_bot),
@@ -190,7 +191,10 @@ export class TelegramSession {
 
   async sendMessage(chatId: string, text: string): Promise<MessageReference> {
     const bot = this.assertBot();
-    const message = await bot.telegram.sendMessage(this.parseChatId(chatId), text);
+    const message = await bot.telegram.sendMessage(
+      this.parseChatId(chatId),
+      text,
+    );
     return this.toMessageReference(message);
   }
 
@@ -249,14 +253,16 @@ export class TelegramSession {
     emoji = "👍",
   ): Promise<void> {
     const bot = this.assertBot();
-    await bot.telegram.setMessageReaction(
-      this.parseChatId(chatId),
-      messageId,
-      [{ type: "emoji", emoji: emoji as never }] as never,
-    );
+    await bot.telegram.setMessageReaction(this.parseChatId(chatId), messageId, [
+      { type: "emoji", emoji: emoji as never },
+    ] as never);
   }
 
-  async editMessage(chatId: string, messageId: number, text: string): Promise<void> {
+  async editMessage(
+    chatId: string,
+    messageId: number,
+    text: string,
+  ): Promise<void> {
     const bot = this.assertBot();
     await bot.telegram.editMessageText(
       this.parseChatId(chatId),
@@ -322,7 +328,9 @@ export class TelegramSession {
       });
       bot.on("channel_post", async (ctx) => {
         if ("channel_post" in ctx.update && ctx.update.channel_post) {
-          await this.handleMessage(ctx.update.channel_post as TelegramMessageLike);
+          await this.handleMessage(
+            ctx.update.channel_post as TelegramMessageLike,
+          );
         }
       });
       bot.on("edited_channel_post", async (ctx) => {
@@ -416,13 +424,23 @@ export class TelegramSession {
       ...(message.caption_entities ?? []),
     ]
       .filter((entity) => entity.type === "url" || entity.type === "text_link")
-      .map((entity) => entity.url ?? body.slice(entity.offset, entity.offset + entity.length));
+      .map(
+        (entity) =>
+          entity.url ??
+          body.slice(entity.offset, entity.offset + entity.length),
+      );
     const mentions = [
       ...(message.entities ?? []),
       ...(message.caption_entities ?? []),
     ]
-      .filter((entity) => entity.type === "mention" || entity.type === "text_mention")
-      .map((entity) => entity.user?.username ?? body.slice(entity.offset, entity.offset + entity.length));
+      .filter(
+        (entity) => entity.type === "mention" || entity.type === "text_mention",
+      )
+      .map(
+        (entity) =>
+          entity.user?.username ??
+          body.slice(entity.offset, entity.offset + entity.length),
+      );
 
     return {
       id: `${message.chat.id}:${message.message_id}`,
@@ -470,7 +488,9 @@ export class TelegramSession {
     return localPath ? [localPath] : [];
   }
 
-  private primaryFile(message: TelegramMessageLike): TelegramFileLike | undefined {
+  private primaryFile(
+    message: TelegramMessageLike,
+  ): TelegramFileLike | undefined {
     if (message.document) return message.document;
     if (message.audio) return message.audio;
     if (message.video) return message.video;
@@ -521,8 +541,7 @@ export class TelegramSession {
         "title" in value && value.title
           ? value.title
           : [firstName, lastName].filter(Boolean).join(" ") || undefined,
-      language_code:
-        "language_code" in value ? value.language_code : undefined,
+      language_code: "language_code" in value ? value.language_code : undefined,
       type,
     };
   }
@@ -530,7 +549,8 @@ export class TelegramSession {
   private toChat(chat: TelegramChatLike): Chat {
     const name =
       chat.title ??
-      ([chat.first_name, chat.last_name].filter(Boolean).join(" ") || undefined);
+      ([chat.first_name, chat.last_name].filter(Boolean).join(" ") ||
+        undefined);
 
     return {
       id: String(chat.id),

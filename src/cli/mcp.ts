@@ -26,7 +26,7 @@ export class McpCommand implements CliCommand {
     const token = process.env[TOKEN_ENV_NAME]?.trim();
 
     if (!token) {
-      throw new Error(`Set ${TOKEN_ENV_NAME} before starting tgmcp.`);
+      throw new Error(`Set ${TOKEN_ENV_NAME} before starting tgfmcp.`);
     }
 
     const { TelegramSession } = await import("../lib/telegram/session.js");

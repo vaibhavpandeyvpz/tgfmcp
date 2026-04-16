@@ -1,10 +1,10 @@
 {
-  "name": "tgmcp",
+  "name": "tgfmcp",
   "version": "0.1.0",
   "description": "TypeScript stdio MCP server and CLI for Telegram bots.",
   "type": "module",
   "bin": {
-    "tgmcp": "./dist/index.js"
+    "tgfmcp": "./dist/index.js"
   },
   "main": "./dist/index.js",
   "files": [
