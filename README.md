@@ -108,9 +108,18 @@ The server currently exposes these tools:
 When started with `--channel <name>`, the server:
 
 - advertises the experimental MCP capability `<name>`
+- advertises `identity/user` with path `meta.user`
+- advertises `identity/session` with path `meta.session`
 - emits `notifications/<name>` for incoming Telegram message events
 
-The event payload includes:
+Each notification includes:
+
+- `content`: a JSON-encoded event payload
+- `meta.source`: always `telegram`
+- `meta.user`: the sender identity seed for the incoming message
+- `meta.session`: the chat identity seed for the incoming message
+
+The JSON-decoded `content` payload includes:
 
 - `source`
 - `self`

@@ -56,6 +56,8 @@ export class TelegramChannel {
           content: JSON.stringify(event),
           meta: {
             source: "telegram",
+            user: event.message.sender.id,
+            session: event.message.chat.id,
           },
         },
       } as never);
