@@ -4,9 +4,15 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { CliIO } from "../lib/cli-io.js";
 import { TelegramMcpServer } from "../lib/mcp/server.js";
 import { register } from "../lib/signal-handler.js";
+import {
+  createEventAllowlist,
+  loadTelegramConfig,
+} from "../lib/telegram/config.js";
 import type { CliCommand } from "../types.js";
-
-const TOKEN_ENV_NAME = "TELEGRAM_BOT_TOKEN";
+import {
+  resolveTelegramCredentials,
+  telegramTokenHelpMessage,
+} from "./telegram-auth.js";
 
 export class McpCommand implements CliCommand {
   constructor(
@@ -26,15 +32,15 @@ export class McpCommand implements CliCommand {
 
   private async action(options: { channels?: boolean }): Promise<void> {
     let keep = false;
-    const token = process.env[TOKEN_ENV_NAME]?.trim();
-
-    if (!token) {
-      throw new Error(`Set ${TOKEN_ENV_NAME} before starting tgfmcp.`);
+    const config = await loadTelegramConfig();
+    const credentials = resolveTelegramCredentials(config);
+    if (!credentials?.token) {
+      throw new Error(telegramTokenHelpMessage());
     }
 
     const { TelegramSession } = await import("../lib/telegram/session.js");
     const session = new TelegramSession({
-      token,
+      token: credentials.token,
       io: this.io,
     });
     let destroyed = false;
@@ -52,9 +58,13 @@ export class McpCommand implements CliCommand {
     });
 
     try {
+      const allowlist = options.channels
+        ? createEventAllowlist(config.allowlist)
+        : undefined;
       const server = TelegramMcpServer.create(
         session,
         Boolean(options.channels),
+        allowlist,
       );
       await server.start(new StdioServerTransport());
       if (options.channels) {

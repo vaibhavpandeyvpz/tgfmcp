@@ -1,4 +1,5 @@
 import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import type { TelegramEventAllowlist } from "./config.js";
 import type { TelegramSession } from "./session.js";
 import type { Entity, Message, PermissionDecision } from "./types.js";
 
@@ -18,6 +19,7 @@ export class TelegramChannel {
     private readonly session: TelegramSession,
     private readonly mcp: Server,
     private readonly channel: string,
+    private readonly allowlist?: TelegramEventAllowlist,
   ) {}
 
   async start(): Promise<void> {
@@ -48,6 +50,9 @@ export class TelegramChannel {
 
   private async publish(message: Message): Promise<void> {
     try {
+      if (!this.isAllowed(message)) {
+        return;
+      }
       this.self ??= await this.session.getMe();
       const event: MessageChannelEvent = {
         source: "telegram",
@@ -81,5 +86,17 @@ export class TelegramChannel {
         behavior: decision.behavior,
       },
     } as never);
+  }
+
+  private isAllowed(message: Message): boolean {
+    const allowlist = this.allowlist;
+    if (!allowlist || !allowlist.enabled) {
+      return true;
+    }
+
+    const isChatAllowed = allowlist.chats.has(message.chat.id);
+    const userId = message.sender.id.trim();
+    const isUserAllowed = Boolean(userId && allowlist.users.has(userId));
+    return isChatAllowed || isUserAllowed;
   }
 }

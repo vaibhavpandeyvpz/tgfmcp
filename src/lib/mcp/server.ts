@@ -6,6 +6,7 @@ import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { z } from "zod";
 import { createJsonResult } from "./helpers.js";
 import { packageMetadata } from "../package-metadata.js";
+import type { TelegramEventAllowlist } from "../telegram/config.js";
 import { TelegramChannel } from "../telegram/channel.js";
 import type { TelegramSession } from "../telegram/session.js";
 import type { ChannelPermissionOption } from "../telegram/types.js";
@@ -38,6 +39,7 @@ export class TelegramMcpServer {
   private constructor(
     private readonly session: TelegramSession,
     private readonly channels: boolean,
+    private readonly allowlist?: TelegramEventAllowlist,
   ) {
     this.mcp = new McpServer(
       {
@@ -67,8 +69,9 @@ export class TelegramMcpServer {
   static create(
     session: TelegramSession,
     channels: boolean,
+    allowlist?: TelegramEventAllowlist,
   ): TelegramMcpServer {
-    const server = new TelegramMcpServer(session, channels);
+    const server = new TelegramMcpServer(session, channels, allowlist);
     server.registerTools();
     return server;
   }
@@ -86,6 +89,7 @@ export class TelegramMcpServer {
       this.session,
       this.mcp.server,
       HOOMAN_CHANNEL,
+      this.allowlist,
     );
     await channel.start();
   }

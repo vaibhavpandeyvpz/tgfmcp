@@ -12,7 +12,7 @@ It lets MCP-compatible clients interact with the Telegram Bot API through Telegr
 
 - Exposes Telegram as an MCP server over stdio.
 - Uses `telegraf` directly for polling and Bot API operations.
-- Connects using `TELEGRAM_BOT_TOKEN` from the environment.
+- Supports interactive configuration via `tgfmcp configure`.
 - Provides direct Bot API tools for bot identity and chat lookups.
 - Includes mutating tools for sending, replying, reacting, editing, deleting, forwarding, and typing.
 - Can emit incoming message events over an optional MCP notification channel.
@@ -21,7 +21,7 @@ It lets MCP-compatible clients interact with the Telegram Bot API through Telegr
 ## Requirements
 
 - Node.js `24+`
-- A Telegram bot token exported as `TELEGRAM_BOT_TOKEN`
+- A Telegram bot token
 
 ## Installation
 
@@ -53,11 +53,19 @@ npm run dev -- mcp
 
 ## Quick Start
 
-1. Export your Telegram bot token:
+1. Run the interactive configuration:
 
 ```bash
-export TELEGRAM_BOT_TOKEN="123456:telegram-bot-token"
+tgfmcp configure
 ```
+
+This writes:
+
+```text
+.tgfmcp/config.json
+```
+
+If `./.tgfmcp` exists in the current working directory, that path is used. Otherwise, `~/.tgfmcp/config.json` is used.
 
 2. Start the MCP server:
 
@@ -83,6 +91,30 @@ bunx tgfmcp mcp
 ```
 
 Starts the stdio MCP server for the configured Telegram bot.
+
+### Configure
+
+```bash
+npx tgfmcp configure
+```
+
+Then opens an interactive configure UI (Ink) to manage:
+
+- `Bot token`
+- `Allowed users`
+- `Allowed chats`
+
+Allowlist items are toggled from menu screens (select an entry to toggle it, then choose `Back`).
+
+The allowlist picker discovers users/chats from recent Telegram updates visible to the bot.
+
+Everything is persisted to:
+
+```text
+.tgfmcp/config.json
+```
+
+If `./.tgfmcp` exists in the current working directory, that path is used. Otherwise, `~/.tgfmcp/config.json` is used.
 
 ## MCP Tools
 
@@ -114,6 +146,13 @@ When started with `--channels`, the server:
 - advertises `hooman/channel/permission` for remote daemon approvals
 - emits `notifications/hooman/channel` for incoming Telegram message events
 
+If allowlist entries are configured, `notifications/hooman/channel` events are emitted only when either:
+
+- `meta.session` (chat ID) is in `allowlist.chats`, or
+- `meta.user` (sender user ID) is in `allowlist.users`
+
+When no allowlist is configured (or both arrays are empty), all inbound channel events are emitted.
+
 Each notification includes:
 
 - `content`: a JSON-encoded event payload
@@ -139,13 +178,13 @@ Approvals are handled through inline buttons rendered from the permission reques
 
 `tgfmcp` stores local state under `./.tgfmcp/` when that folder exists in the current working directory, otherwise `~/.tgfmcp/`:
 
+- `config.json` for bot token and allowlist
 - `attachments/` for downloaded incoming media attachments
 
 ## Notes
 
 - Telegram bots cannot access arbitrary private chats; they can only interact where the bot has been added, contacted, or is otherwise permitted.
 - Message mutation tools that target an existing message require explicit `chatId` and `messageId` inputs.
-- The CLI intentionally exposes only `tgfmcp mcp`.
 
 ## License
 

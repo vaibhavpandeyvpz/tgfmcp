@@ -8,6 +8,7 @@
     "lib": ["ES2024", "DOM"],
     "types": ["node"],
     "strict": true,
+    "jsx": "react-jsx",
     "noEmitOnError": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -15,5 +16,5 @@
     "declaration": true,
     "sourceMap": true
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
 }
