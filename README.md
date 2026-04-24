@@ -16,7 +16,7 @@ It lets MCP-compatible clients interact with the Telegram Bot API through Telegr
 - Provides direct Bot API tools for bot identity and chat lookups.
 - Includes mutating tools for sending, replying, reacting, editing, deleting, forwarding, and typing.
 - Can emit incoming message events over an optional MCP notification channel.
-- Stores downloaded incoming media attachments under `~/.tgfmcp/attachments/`.
+- Stores downloaded incoming media attachments under `./.tgfmcp/attachments/` when `./.tgfmcp` exists, otherwise `~/.tgfmcp/attachments/`.
 
 ## Requirements
 
@@ -65,10 +65,10 @@ export TELEGRAM_BOT_TOKEN="123456:telegram-bot-token"
 npx tgfmcp mcp
 ```
 
-3. If your MCP host supports notifications and you want incoming Telegram events, provide a channel name:
+3. If your MCP host supports notifications and you want incoming Telegram events, enable channels:
 
 ```bash
-npx tgfmcp mcp --channel claude/channel
+npx tgfmcp mcp --channels
 ```
 
 The server uses stdio, so it is meant to be launched by an MCP client or wrapper rather than browsed directly in a terminal.
@@ -105,12 +105,14 @@ The server currently exposes these tools:
 
 ## Push Channel
 
-When started with `--channel <name>`, the server:
+When started with `--channels`, the server:
 
-- advertises the experimental MCP capability `<name>`
-- advertises `identity/user` with path `meta.user`
-- advertises `identity/session` with path `meta.session`
-- emits `notifications/<name>` for incoming Telegram message events
+- advertises the experimental MCP capability `hooman/channel`
+- advertises `hooman/user` with path `meta.user`
+- advertises `hooman/session` with path `meta.session`
+- advertises `hooman/thread` with path `meta.thread`
+- advertises `hooman/channel/permission` for remote daemon approvals
+- emits `notifications/hooman/channel` for incoming Telegram message events
 
 Each notification includes:
 
@@ -118,6 +120,7 @@ Each notification includes:
 - `meta.source`: always `telegram`
 - `meta.user`: the sender identity seed for the incoming message
 - `meta.session`: the chat identity seed for the incoming message
+- `meta.thread`: the Telegram message ID for the incoming message
 
 The JSON-decoded `content` payload includes:
 
@@ -126,11 +129,13 @@ The JSON-decoded `content` payload includes:
 - `message`
 - `text`
 
-If an incoming message contains downloadable media, the file is downloaded and included as a local attachment path in the event payload. Files are stored under `~/.tgfmcp/attachments/`.
+If an incoming message contains downloadable media, the file is downloaded and included as a local attachment path in the event payload. Files are stored under `./.tgfmcp/attachments/` when `./.tgfmcp` exists, otherwise `~/.tgfmcp/attachments/`.
+
+When Hooman sends `notifications/hooman/channel/permission_request`, `tgfmcp` posts the request back into the originating Telegram chat and waits for a reply referencing the same UUID. Supported replies are `yes <uuid>`, `always <uuid>`, and `no <uuid>`, which are relayed back over `notifications/hooman/channel/permission`.
 
 ## Local Data
 
-`tgfmcp` stores local state under `~/.tgfmcp/`:
+`tgfmcp` stores local state under `./.tgfmcp/` when that folder exists in the current working directory, otherwise `~/.tgfmcp/`:
 
 - `attachments/` for downloaded incoming media attachments
 
