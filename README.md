@@ -106,7 +106,7 @@ Then opens an interactive configure UI (Ink) to manage:
 
 Allowlist items are toggled from menu screens (select an entry to toggle it, then choose `Back`).
 
-The allowlist picker discovers users/chats from recent Telegram updates visible to the bot.
+For enrolling users/chats, configure can generate a short code per screen and watch incoming Telegram updates. Send the code from the target user/chat and the matching ID is auto-added to allowlist.
 
 Everything is persisted to:
 
