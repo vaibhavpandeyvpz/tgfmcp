@@ -131,7 +131,9 @@ The JSON-decoded `content` payload includes:
 
 If an incoming message contains downloadable media, the file is downloaded and included as a local attachment path in the event payload. Files are stored under `./.tgfmcp/attachments/` when `./.tgfmcp` exists, otherwise `~/.tgfmcp/attachments/`.
 
-When Hooman sends `notifications/hooman/channel/permission_request`, `tgfmcp` posts the request back into the originating Telegram chat and waits for a reply referencing the same UUID. Supported replies are `yes <uuid>`, `always <uuid>`, and `no <uuid>`, which are relayed back over `notifications/hooman/channel/permission`.
+When Hooman sends `notifications/hooman/channel/permission_request`, `tgfmcp` posts the request back into the originating Telegram chat with inline approval buttons derived from `params.options` (defaults: allow once, always allow, deny). Button selections are relayed back over `notifications/hooman/channel/permission`.
+
+Approvals are handled through inline buttons rendered from the permission request options.
 
 ## Local Data
 

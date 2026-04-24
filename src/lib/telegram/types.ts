@@ -174,3 +174,15 @@ export interface Message {
   mentions: string[];
   parent_id?: string;
 }
+
+export type ChannelPermissionBehavior = "allow_once" | "allow_always" | "deny";
+
+export interface ChannelPermissionOption {
+  id: string;
+  label: string;
+}
+
+export interface PermissionDecision {
+  requestId: string;
+  behavior: ChannelPermissionBehavior;
+}

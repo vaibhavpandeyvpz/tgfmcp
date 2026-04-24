@@ -8,11 +8,18 @@ import { createJsonResult } from "./helpers.js";
 import { packageMetadata } from "../package-metadata.js";
 import { TelegramChannel } from "../telegram/channel.js";
 import type { TelegramSession } from "../telegram/session.js";
+import type { ChannelPermissionOption } from "../telegram/types.js";
 
 const HOOMAN_CHANNEL = "hooman/channel";
 const HOOMAN_CHANNEL_PERMISSION = "hooman/channel/permission";
 const HOOMAN_PERMISSION_REQUEST_METHOD =
   "notifications/hooman/channel/permission_request";
+
+const DEFAULT_PERMISSION_OPTIONS: ChannelPermissionOption[] = [
+  { id: "allow_once", label: "Allow once" },
+  { id: "allow_always", label: "Always allow" },
+  { id: "deny", label: "Deny" },
+];
 
 function instructions(channel = false): string {
   const files = ["formatting.md", channel ? "channel.md" : null].filter(
@@ -325,6 +332,14 @@ export class TelegramMcpServer {
         tool_name: z.string().min(1),
         description: z.string().min(1),
         input_preview: z.string().min(1),
+        options: z
+          .array(
+            z.object({
+              id: z.string().min(1),
+              label: z.string().min(1),
+            }),
+          )
+          .optional(),
         meta: z
           .object({
             source: z.string().optional(),
@@ -347,15 +362,53 @@ export class TelegramMcpServer {
           `Description: ${params.description}`,
           `Input: ${params.input_preview}`,
           "",
-          `Reply "yes ${params.request_id}", "always ${params.request_id}", or "no ${params.request_id}".`,
+          "Choose an approval option below, or reply with text:",
+          `"yes ${params.request_id}", "always ${params.request_id}", or "no ${params.request_id}".`,
         ].join("\n");
+        const options = this.resolvePermissionOptions(params.options);
         const messageId = Number(params.meta?.thread);
         if (Number.isInteger(messageId) && messageId > 0) {
-          await this.session.replyToMessage(chatId, messageId, text);
+          await this.session.sendPermissionRequest(
+            chatId,
+            text,
+            params.request_id,
+            options,
+            messageId,
+          );
           return;
         }
-        await this.session.sendMessage(chatId, text);
+        await this.session.sendPermissionRequest(
+          chatId,
+          text,
+          params.request_id,
+          options,
+        );
       },
     );
+  }
+
+  private resolvePermissionOptions(
+    options:
+      | Array<{
+          id: string;
+          label: string;
+        }>
+      | undefined,
+  ): ChannelPermissionOption[] {
+    const valid = (options ?? [])
+      .map((option) => ({
+        id: option.id.trim(),
+        label: option.label.trim(),
+      }))
+      .filter(
+        (option) =>
+          option.id.length > 0 &&
+          option.label.length > 0 &&
+          (option.id === "allow_once" ||
+            option.id === "allow_always" ||
+            option.id === "deny"),
+      );
+
+    return valid.length > 0 ? valid : DEFAULT_PERMISSION_OPTIONS;
   }
 }

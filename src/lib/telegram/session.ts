@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import { EventEmitter } from "node:events";
-import { Input, Telegraf, type Context } from "telegraf";
+import { Input, Markup, Telegraf, type Context } from "telegraf";
 import { saveTelegramFile } from "../attachments.js";
 import { CliIO } from "../cli-io.js";
 import { createDeferred } from "../deferred-promise.js";
@@ -12,6 +12,9 @@ import type {
   LookupResult,
   Message,
   MessageReference,
+  ChannelPermissionBehavior,
+  ChannelPermissionOption,
+  PermissionDecision,
   TelegramChatLike,
   TelegramFileLike,
   TelegramMessageLike,
@@ -20,6 +23,7 @@ import type {
 
 type SessionEvents = {
   message: [Message];
+  permission: [PermissionDecision];
 };
 
 export type StartResult =
@@ -198,6 +202,49 @@ export class TelegramSession {
     return this.toMessageReference(message);
   }
 
+  async sendPermissionRequest(
+    chatId: string,
+    text: string,
+    requestId: string,
+    options: ChannelPermissionOption[],
+    replyToMessageId?: number,
+  ): Promise<MessageReference> {
+    const bot = this.assertBot();
+    const buttons = options
+      .map((option) => {
+        const callbackData = permissionCallbackData(requestId, option.id);
+        if (!callbackData) {
+          return null;
+        }
+        return [Markup.button.callback(option.label, callbackData)];
+      })
+      .filter((row): row is ReturnType<typeof Markup.button.callback>[] =>
+        Array.isArray(row),
+      );
+
+    const message = await bot.telegram.sendMessage(
+      this.parseChatId(chatId),
+      text,
+      {
+        ...(replyToMessageId
+          ? {
+              reply_parameters: {
+                message_id: replyToMessageId,
+              },
+            }
+          : {}),
+        ...(buttons.length > 0
+          ? {
+              reply_markup: {
+                inline_keyboard: buttons,
+              },
+            }
+          : {}),
+      } as never,
+    );
+    return this.toMessageReference(message);
+  }
+
   async sendMediaFromBase64(
     chatId: string,
     mimetype: string,
@@ -343,6 +390,37 @@ export class TelegramSession {
           );
         }
       });
+      bot.on("callback_query", async (ctx) => {
+        const query =
+          "callback_query" in ctx.update
+            ? ctx.update.callback_query
+            : undefined;
+        const data =
+          query && "data" in query && typeof query.data === "string"
+            ? query.data
+            : undefined;
+        const parsed = parsePermissionCallbackData(data);
+        if (!parsed) {
+          return;
+        }
+        this.events.emit("permission", parsed);
+        if (query && "id" in query) {
+          await ctx.answerCbQuery("Approval received");
+        }
+        if (
+          query &&
+          "message" in query &&
+          query.message &&
+          "chat" in query.message &&
+          "message_id" in query.message
+        ) {
+          const chatId = String(query.message.chat.id);
+          const messageId = Number(query.message.message_id);
+          if (Number.isFinite(messageId)) {
+            await this.editMessage(chatId, messageId, "Approval resolved.");
+          }
+        }
+      });
 
       this.bot = bot;
       const me = await bot.telegram.getMe();
@@ -355,6 +433,7 @@ export class TelegramSession {
           "edited_message",
           "channel_post",
           "edited_channel_post",
+          "callback_query",
         ],
       });
 
@@ -593,4 +672,53 @@ export class TelegramSession {
       filename,
     } as never);
   }
+}
+
+const PERMISSION_CALLBACK_PREFIX = "ap";
+
+function permissionCallbackData(
+  requestId: string,
+  optionId: string,
+): string | null {
+  const normalizedOption = optionId.trim();
+  if (!normalizedOption) {
+    return null;
+  }
+  const payload = `${PERMISSION_CALLBACK_PREFIX}:${requestId}:${normalizedOption}`;
+  return payload.length <= 64 ? payload : null;
+}
+
+function parsePermissionCallbackData(
+  value: string | undefined,
+): PermissionDecision | null {
+  if (!value) {
+    return null;
+  }
+  const parts = value.split(":");
+  if (parts.length !== 3 || parts[0] !== PERMISSION_CALLBACK_PREFIX) {
+    return null;
+  }
+  const requestId = parts[1]?.trim().toLowerCase();
+  const optionId = parts[2]?.trim().toLowerCase();
+  if (!requestId || !optionId) {
+    return null;
+  }
+  const behavior = toBehavior(optionId);
+  if (!behavior) {
+    return null;
+  }
+  return { requestId, behavior };
+}
+
+function toBehavior(value: string): ChannelPermissionBehavior | null {
+  if (value === "allow_once") {
+    return "allow_once";
+  }
+  if (value === "allow_always" || value === "allow-always") {
+    return "allow_always";
+  }
+  if (value === "deny") {
+    return "deny";
+  }
+  return null;
 }

@@ -1,9 +1,6 @@
 import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import type { TelegramSession } from "./session.js";
-import type { Entity, Message } from "./types.js";
-
-const PERMISSION_REPLY_RE =
-  /^\s*(yes|y|always|a|no|n)\s+([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\s*$/i;
+import type { Entity, Message, PermissionDecision } from "./types.js";
 
 export interface MessageChannelEvent {
   source: "telegram";
@@ -13,7 +10,8 @@ export interface MessageChannelEvent {
 }
 
 export class TelegramChannel {
-  private unsubscribe?: () => void;
+  private unsubscribe1?: () => void;
+  private unsubscribe2?: () => void;
   private self?: Entity;
 
   constructor(
@@ -23,8 +21,11 @@ export class TelegramChannel {
   ) {}
 
   async start(): Promise<void> {
-    this.unsubscribe = this.session.on("message", (message) => {
+    this.unsubscribe1 = this.session.on("message", (message) => {
       void this.publish(message);
+    });
+    this.unsubscribe2 = this.session.on("permission", (decision) => {
+      void this.publishPermission(decision);
     });
 
     if (this.session.client) {
@@ -39,24 +40,14 @@ export class TelegramChannel {
   }
 
   private stop(): void {
-    this.unsubscribe?.();
-    this.unsubscribe = undefined;
+    this.unsubscribe1?.();
+    this.unsubscribe1 = undefined;
+    this.unsubscribe2?.();
+    this.unsubscribe2 = undefined;
   }
 
   private async publish(message: Message): Promise<void> {
     try {
-      const verdict = parsePermissionVerdict(message.body);
-      if (verdict) {
-        await this.mcp.notification({
-          method: "notifications/hooman/channel/permission",
-          params: {
-            request_id: verdict.requestId,
-            behavior: verdict.behavior,
-          },
-        } as never);
-        return;
-      }
-
       this.self ??= await this.session.getMe();
       const event: MessageChannelEvent = {
         source: "telegram",
@@ -81,23 +72,14 @@ export class TelegramChannel {
       // Ignore closed transport or unsupported client errors.
     }
   }
-}
 
-function parsePermissionVerdict(text: string): {
-  requestId: string;
-  behavior: "allow_once" | "allow_always" | "deny";
-} | null {
-  const match = PERMISSION_REPLY_RE.exec(text);
-  if (!match) {
-    return null;
+  private async publishPermission(decision: PermissionDecision): Promise<void> {
+    await this.mcp.notification({
+      method: "notifications/hooman/channel/permission",
+      params: {
+        request_id: decision.requestId,
+        behavior: decision.behavior,
+      },
+    } as never);
   }
-  const command = match[1]!.toLowerCase();
-  const requestId = match[2]!.toLowerCase();
-  if (command === "yes" || command === "y") {
-    return { requestId, behavior: "allow_once" };
-  }
-  if (command === "always" || command === "a") {
-    return { requestId, behavior: "allow_always" };
-  }
-  return { requestId, behavior: "deny" };
 }
