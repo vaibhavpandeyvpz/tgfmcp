@@ -1,6 +1,6 @@
 {
   "name": "tgfmcp",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "TypeScript stdio MCP server and CLI for Telegram bots.",
   "type": "module",
   "bin": {
