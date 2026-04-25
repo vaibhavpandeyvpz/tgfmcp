@@ -65,6 +65,7 @@ export class TelegramChannel {
         method: `notifications/${this.channel}`,
         params: {
           content: JSON.stringify(event),
+          attachments: event.message.attachments,
           meta: {
             source: "telegram",
             user: event.message.sender.id,
