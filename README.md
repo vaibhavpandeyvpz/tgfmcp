@@ -16,7 +16,7 @@ It lets MCP-compatible clients interact with the Telegram Bot API through Telegr
 - Provides direct Bot API tools for bot identity and chat lookups.
 - Includes mutating tools for sending, replying, reacting, editing, deleting, forwarding, and typing.
 - Can emit incoming message events over an optional MCP notification channel.
-- Stores downloaded incoming media attachments under `./.tgfmcp/attachments/` when `./.tgfmcp` exists, otherwise `~/.tgfmcp/attachments/`.
+- Stores downloaded incoming media attachments under `~/.tgfmcp/attachments/`.
 
 ## Requirements
 
@@ -62,10 +62,8 @@ tgfmcp configure
 This writes:
 
 ```text
-.tgfmcp/config.json
+~/.tgfmcp/config.json
 ```
-
-If `./.tgfmcp` exists in the current working directory, that path is used. Otherwise, `~/.tgfmcp/config.json` is used.
 
 2. Start the MCP server:
 
@@ -111,10 +109,8 @@ For enrolling users/chats, configure can generate a short code per screen and wa
 Everything is persisted to:
 
 ```text
-.tgfmcp/config.json
+~/.tgfmcp/config.json
 ```
-
-If `./.tgfmcp` exists in the current working directory, that path is used. Otherwise, `~/.tgfmcp/config.json` is used.
 
 ## MCP Tools
 
@@ -168,7 +164,7 @@ The JSON-decoded `content` payload includes:
 - `message`
 - `text`
 
-If an incoming message contains downloadable media, the file is downloaded and included as a local attachment path in the event payload. Files are stored under `./.tgfmcp/attachments/` when `./.tgfmcp` exists, otherwise `~/.tgfmcp/attachments/`.
+If an incoming message contains downloadable media, the file is downloaded and included as a local attachment path in the event payload. Files are stored under `~/.tgfmcp/attachments/`.
 
 When Hooman sends `notifications/hooman/channel/permission_request`, `tgfmcp` posts the request back into the originating Telegram chat with inline approval buttons derived from `params.options` (defaults: allow once, always allow, deny). Button selections are relayed back over `notifications/hooman/channel/permission`.
 
@@ -176,7 +172,7 @@ Approvals are handled through inline buttons rendered from the permission reques
 
 ## Local Data
 
-`tgfmcp` stores local state under `./.tgfmcp/` when that folder exists in the current working directory, otherwise `~/.tgfmcp/`:
+`tgfmcp` stores local state under `~/.tgfmcp/`:
 
 - `config.json` for bot token and allowlist
 - `attachments/` for downloaded incoming media attachments

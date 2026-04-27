@@ -253,7 +253,7 @@ export function ConfigureApp({
     setPrompt({
       title: "Update Bot token",
       label: "Bot token",
-      note: "Value is stored in .tgfmcp/config.json.",
+      note: "Value is stored in ~/.tgfmcp/config.json.",
       initialValue: draft.botToken,
       onSubmit: async (value) => {
         const next = value.trim();
