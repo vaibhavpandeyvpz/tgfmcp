@@ -4,9 +4,17 @@
   "description": "TypeScript stdio MCP server and CLI for Telegram bots.",
   "type": "module",
   "bin": {
-    "tgfmcp": "./dist/index.js"
+    "tgfmcp": "./dist/cli.js"
   },
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist",
     "README.md",
@@ -15,7 +23,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/copy-instructions.mjs",
     "clean": "rm -rf dist",
-    "dev": "tsx src/index.ts",
+    "dev": "tsx src/cli.ts",
     "prepack": "npm run build"
   },
   "keywords": [
